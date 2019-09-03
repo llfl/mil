@@ -34,8 +34,6 @@ class DataGenerator(object):
         self.scale, self.bias = None, None
 
         demo_file = FLAGS.demo_file
-        if demo_file == None :
-            demo_file = 'demos_0'
         demo_file = natsorted(glob.glob(demo_file + '/*pkl'))
         self.dataset_size = len(demo_file)
         if FLAGS.train and FLAGS.training_set_size != -1:

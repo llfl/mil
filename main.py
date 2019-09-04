@@ -144,7 +144,7 @@ def train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=0):
             postlosses.append(results[-1])
 
         if itr != 0 and itr % PRINT_INTERVAL == 0:
-            print('Iteration %d: average preloss is %.2f, average postloss is %.2f' % (itr, np.mean(prelosses), np.mean(postlosses)))
+            #print('Iteration %d: average preloss is %.2f, average postloss is %.2f' % (itr, np.mean(prelosses), np.mean(postlosses)))
             prelosses, postlosses = [], []
 
         if itr != 0 and itr % TEST_PRINT_INTERVAL == 0:
@@ -162,10 +162,10 @@ def train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=0):
                 with graph.as_default():
                     results = sess.run(input_tensors, feed_dict=feed_dict)
                 train_writer.add_summary(results[0], itr)
-                print('Test results: average preloss is %.2f, average postloss is %.2f' % (np.mean(results[1]), np.mean(results[2])))
+                #print('Test results: average preloss is %.2f, average postloss is %.2f' % (np.mean(results[1]), np.mean(results[2])))
 
         if itr != 0 and (itr % SAVE_INTERVAL == 0 or itr == training_range[-1]):
-            print('Saving model to: %s' % (save_dir + '_%d' % itr))
+            #print('Saving model to: %s' % (save_dir + '_%d' % itr))
             with graph.as_default():
                 saver.save(sess, save_dir + '_%d' % itr)
 
@@ -196,7 +196,7 @@ def generate_test_demos(data_generator):
         selected_demoO.append(np.array(Os))
         selected_demoX.append(np.array(Xs))
         selected_demoU.append(np.array(Us))
-    print("Finished collecting demos for testing")
+    #print("Finished collecting demos for testing")
     selected_demo = dict(selected_demoX=selected_demoX, selected_demoU=selected_demoU, selected_demoO=selected_demoO)
     data_generator.selected_demo = selected_demo
 
@@ -207,7 +207,7 @@ def main():
     # Build up environment to prevent segfault
     if not FLAGS.train:
         if 'reach' in FLAGS.experiment:
-            print('making ReacherMILTest-v1')
+            #print('making ReacherMILTest-v1')
             env = gym.make('ReacherMILTest-v1')
             ob = env.reset()
             # import pdb; pdb.set_trace()
@@ -296,7 +296,7 @@ def main():
             ind1 = model_file.index('model')
             ind1 = model_file.index('model')
             resume_itr = int(model_file[ind1+6:])
-            print("Restoring model weights from " + model_file)
+            #print("Restoring model weights from " + model_file)
             with graph.as_default():
                 saver.restore(sess, model_file)
     if FLAGS.train:
@@ -312,5 +312,5 @@ def main():
 
 if __name__ == "__main__":
 
-    # print('FLAGS.demo_file',FLAGS.demo_file)
+    # #print('FLAGS.demo_file',FLAGS.demo_file)
     main()

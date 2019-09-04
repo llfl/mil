@@ -250,11 +250,11 @@ class MIL(object):
             im_width = network_config['image_width']
             num_channels = network_config['image_channels']
             flatten_image = tf.reshape(image_input, [-1, im_height*im_width*num_channels])
-            print('flatten_image.shape',flatten_image.shape)
-            print('range(FLAGS.bt_dim)',range(FLAGS.bt_dim),FLAGS.bt_dim)
+            #print('flatten_image.shape',flatten_image.shape)
+            #print('range(FLAGS.bt_dim)',range(FLAGS.bt_dim),FLAGS.bt_dim)
 
             context = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), list(range(FLAGS.bt_dim))))
-            print('context.shape',context.shape)
+            #print('context.shape',context.shape)
             context += weights['context']
             if FLAGS.learn_final_eept:
                 context_final_eept = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), list(range(FLAGS.bt_dim))))
@@ -530,8 +530,8 @@ class MIL(object):
                     local_lossa += final_eept_loss_eps * final_eept_lossa
 
                 # Compute fast gradients
-                print('local_lossa',local_lossa,'weights.values()',list(weights.values()))
-                print('weights',weights)
+                #print('local_lossa',local_lossa,'weights.values()',list(weights.values()))
+                #print('weights',weights)
                 grads = tf.gradients(local_lossa, list(weights.values()))
                 gradients = dict(zip(weights.keys(), grads))
                 # make fast gradient zero for weights with gradient None
@@ -638,5 +638,5 @@ class MIL(object):
 
         out_dtype = [tf.float32, [tf.float32]*num_updates, tf.float32, tf.float32, [tf.float32]*num_updates, [tf.float32]*num_updates, tf.float32, [[tf.float32]*len(self.weights.keys())]*num_updates]
         result = tf.map_fn(batch_metalearn, elems=(inputa, inputb, actiona, actionb), dtype=out_dtype)
-        print ('Done with map.')
+        #print ('Done with map.')
         return result

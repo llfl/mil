@@ -31,9 +31,9 @@ flags.DEFINE_bool('no_state', False, 'do not include states in the demonstration
 flags.DEFINE_bool('no_final_eept', False, 'do not include final ee pos in the demonstrations for inner update')
 flags.DEFINE_bool('zero_state', False, 'zero-out states (meta-learn state) in the demonstrations for inner update (used in the paper with video-only demos)')
 flags.DEFINE_bool('two_arms', False, 'use two-arm structure when state is zeroed-out')
-flags.DEFINE_integer('training_set_size', -1, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
+flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
                                                 -1 for all data except those in validation set')
-flags.DEFINE_integer('val_set_size', 150, 'size of the training set, 150 for sim_reach and 76 for sim push')
+flags.DEFINE_integer('val_set_size', 30, 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
 flags.DEFINE_integer('metatrain_iterations', 50000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing

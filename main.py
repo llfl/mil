@@ -263,8 +263,8 @@ def main():
 
     # put here for now
     if FLAGS.train:
-        #data_generator.generate_batches(noisy=FLAGS.use_noisy_demos)
-        data_generator.generate_batches()
+        data_generator.generate_batches(noisy=FLAGS.use_noisy_demos)
+        #data_generator.generate_batches()
         with graph.as_default():
             train_image_tensors = data_generator.make_batch_tensor(network_config, restore_iter=FLAGS.restore_iter)
             inputa = train_image_tensors[:, :FLAGS.update_batch_size*FLAGS.T, :]

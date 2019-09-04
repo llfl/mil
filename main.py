@@ -3,6 +3,7 @@ import random
 import tensorflow as tf
 import logging
 import imageio
+import gym
 
 from data_generator import DataGenerator
 from mil import MIL
@@ -10,16 +11,17 @@ from evaluation.eval_reach import evaluate_vision_reach
 from evaluation.eval_push import evaluate_push
 from tensorflow.python.platform import flags
 
+
 FLAGS = flags.FLAGS
 LOGGER = logging.getLogger(__name__)
 
 ## Dataset/method options
-flags.DEFINE_string('experiment', 'sim_reach', 'sim_vision_reach or sim_push')
-flags.DEFINE_string('demo_file', None, 'path to the directory where demo files that containing robot states and actions are stored')
-flags.DEFINE_string('demo_gif_dir', None, 'path to the videos of demonstrations')
-flags.DEFINE_string('gif_prefix', 'object', 'prefix of the video directory for each task, e.g. object_0 for task 0')
-flags.DEFINE_integer('im_width', 100, 'width of the images in the demo videos,  125 for sim_push, and 80 for sim_vision_reach')
-flags.DEFINE_integer('im_height', 90, 'height of the images in the demo videos, 125 for sim_push, and 64 for sim_vision_reach')
+flags.DEFINE_string('experiment', 'sim__vision_reach', 'sim_vision_reach or sim_push')
+flags.DEFINE_string('demo_file', 'mil_data/data/sim_vision_reach_test', 'path to the directory where demo files that containing robot states and actions are stored')
+flags.DEFINE_string('demo_gif_dir',  'mil_data/data/sim_vision_reach_test/', 'path to the videos of demonstrations')
+flags.DEFINE_string('gif_prefix', 'color', 'prefix of the video directory for each task, e.g. object_0 for task 0')
+flags.DEFINE_integer('im_width', 80, 'width of the images in the demo videos,  125 for sim_push, and 80 for sim_vision_reach')
+flags.DEFINE_integer('im_height', 64, 'height of the images in the demo videos, 125 for sim_push, and 64 for sim_vision_reach')
 flags.DEFINE_integer('num_channels', 3, 'number of channels of the images in the demo videos')
 flags.DEFINE_integer('T', 50, 'time horizon of the demo videos, 50 for reach, 100 for push')
 flags.DEFINE_bool('hsv', False, 'convert the image to HSV format')
@@ -33,16 +35,16 @@ flags.DEFINE_bool('zero_state', False, 'zero-out states (meta-learn state) in th
 flags.DEFINE_bool('two_arms', False, 'use two-arm structure when state is zeroed-out')
 flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
                                                 -1 for all data except those in validation set')
-flags.DEFINE_integer('val_set_size', 30, 'size of the training set, 150 for sim_reach and 76 for sim push')
+flags.DEFINE_integer('val_set_size',20 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 50000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
-flags.DEFINE_integer('meta_batch_size', 12, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
-flags.DEFINE_float('meta_lr', 0.001, 'the base learning rate of the generator')
-flags.DEFINE_integer('update_batch_size', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
+flags.DEFINE_integer('metatrain_iterations', 4, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
+flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
+flags.DEFINE_integer('update_batch_size', 2, 'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_float('train_update_lr', 1e-3, 'step size alpha for inner gradient update.') # 0.001 for reaching, 0.01 for pushing and placing
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.') # 5 for placing
-flags.DEFINE_bool('clip', False, 'use gradient clipping for fast gradient')
+flags.DEFINE_bool('clip', True, 'use gradient clipping for fast gradient')
 flags.DEFINE_float('clip_max', 10.0, 'maximum clipping value for fast gradient')
 flags.DEFINE_float('clip_min', -10.0, 'minimum clipping value for fast gradient')
 flags.DEFINE_bool('fc_bt', True, 'use bias transformation for the first fc layer')
@@ -51,7 +53,7 @@ flags.DEFINE_bool('conv_bt', True, 'use bias transformation for the first conv l
 flags.DEFINE_integer('bt_dim', 10, 'the dimension of bias transformation for FC layers')
 flags.DEFINE_string('pretrain_weight_path', 'N/A', 'path to pretrained weights')
 flags.DEFINE_bool('train_pretrain_conv1', False, 'whether to finetune the pretrained weights')
-flags.DEFINE_bool('two_head', False, 'use two-head architecture')
+flags.DEFINE_bool('two_head',True, 'use two-head architecture')
 flags.DEFINE_bool('learn_final_eept', False, 'learn an auxiliary loss for predicting final end-effector pose')
 flags.DEFINE_bool('learn_final_eept_whole_traj', False, 'learn an auxiliary loss for predicting final end-effector pose \
                                                          by passing the whole trajectory of eepts (used for video-only models)')
@@ -72,10 +74,10 @@ flags.DEFINE_bool('fp', True, 'use spatial soft-argmax or not')
 flags.DEFINE_string('norm', 'layer_norm', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('dropout', False, 'use dropout for fc layers or not')
 flags.DEFINE_float('keep_prob', 0.5, 'keep probability for dropout')
-flags.DEFINE_integer('num_filters', 64, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
-flags.DEFINE_integer('filter_size', 3, 'filter size for conv nets -- 3 for placing, 5 for pushing, 3 for reaching.')
-flags.DEFINE_integer('num_conv_layers', 5, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
-flags.DEFINE_integer('num_strides', 3, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_filters', 2, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
+flags.DEFINE_integer('filter_size', 5, 'filter size for conv nets -- 3 for placing, 5 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_conv_layers', 4, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_strides', 4, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_bool('conv', True, 'whether or not to use a convolutional network, only applicable in some cases')
 flags.DEFINE_integer('num_fc_layers', 3, 'number of fully-connected layers')
 flags.DEFINE_integer('layer_size', 100, 'hidden dimension of fully-connected layers')
@@ -83,27 +85,27 @@ flags.DEFINE_bool('temporal_conv_2_head', False, 'whether or not to use temporal
 flags.DEFINE_bool('temporal_conv_2_head_ee', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting \
                 for predicting the ee pose.')
 flags.DEFINE_integer('temporal_filter_size', 5, 'filter size for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters', 64, 'number of filters for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters_ee', 64, 'number of filters for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers', 3, 'number of layers for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers_ee', 3, 'number of layers for temporal convolution for ee pose prediction')
-flags.DEFINE_string('init', 'random', 'initializer for conv weights. Choose among random, xavier, and he')
+flags.DEFINE_integer('temporal_num_filters', 2, 'number of filters for temporal convolution')
+flags.DEFINE_integer('temporal_num_filters_ee', 2, 'number of filters for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers', 2, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers_ee', 2, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_string('init', 'xavier', 'initializer for conv weights. Choose among random, xavier, and he')
 flags.DEFINE_bool('max_pool', False, 'Whether or not to use max pooling rather than strided convolutions')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
 
 ## Logging, saving, and testing options
 flags.DEFINE_bool('log', True, 'if false, do not log summaries, for debugging code.')
-flags.DEFINE_string('log_dir1', '/tmp/data', 'directory for summaries and checkpoints.')
+flags.DEFINE_string('log_dirs', 'logs/sim_reach', 'directory for summaries and checkpoints.')
 flags.DEFINE_bool('resume', False, 'resume training if there is a model available')
-flags.DEFINE_bool('train', True, 'True to train, False to test.')
+flags.DEFINE_bool('train', False, 'True to train, False to test.')
 flags.DEFINE_integer('restore_iter', 0, 'iteration to load model (-1 for latest model)')
 flags.DEFINE_integer('train_update_batch_size', -1, 'number of examples used for gradient update during training \
                     (use if you want to test with a different number).')
 flags.DEFINE_integer('test_update_batch_size', 1, 'number of demos used during test time')
-flags.DEFINE_float('gpu_memory_fraction', 1.0, 'fraction of memory used in gpu')
+flags.DEFINE_float('gpu_memory_fraction', 0.5, 'fraction of memory used in gpu')
 flags.DEFINE_bool('record_gifs', True, 'record gifs during evaluation')
 
-def train(graph, model, saver, sess, data_generator, log_dir, restore_itr=0):
+def train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=0):
     """
     Train the model.
     """
@@ -113,8 +115,8 @@ def train(graph, model, saver, sess, data_generator, log_dir, restore_itr=0):
     SAVE_INTERVAL = 1000
     TOTAL_ITERS = FLAGS.metatrain_iterations
     prelosses, postlosses = [], []
-    save_dir = log_dir + '/model'
-    train_writer = tf.summary.FileWriter(log_dir, graph)
+    save_dir = log_dirs + '/model'
+    train_writer = tf.summary.FileWriter(log_dirs, graph)
     # actual training.
     if restore_itr == 0:
         training_range = range(TOTAL_ITERS)
@@ -142,7 +144,7 @@ def train(graph, model, saver, sess, data_generator, log_dir, restore_itr=0):
             postlosses.append(results[-1])
 
         if itr != 0 and itr % PRINT_INTERVAL == 0:
-            print 'Iteration %d: average preloss is %.2f, average postloss is %.2f' % (itr, np.mean(prelosses), np.mean(postlosses))
+            print('Iteration %d: average preloss is %.2f, average postloss is %.2f' % (itr, np.mean(prelosses), np.mean(postlosses)))
             prelosses, postlosses = [], []
 
         if itr != 0 and itr % TEST_PRINT_INTERVAL == 0:
@@ -160,10 +162,10 @@ def train(graph, model, saver, sess, data_generator, log_dir, restore_itr=0):
                 with graph.as_default():
                     results = sess.run(input_tensors, feed_dict=feed_dict)
                 train_writer.add_summary(results[0], itr)
-                print 'Test results: average preloss is %.2f, average postloss is %.2f' % (np.mean(results[1]), np.mean(results[2]))
+                print('Test results: average preloss is %.2f, average postloss is %.2f' % (np.mean(results[1]), np.mean(results[2])))
 
         if itr != 0 and (itr % SAVE_INTERVAL == 0 or itr == training_range[-1]):
-            print 'Saving model to: %s' % (save_dir + '_%d' % itr)
+            print('Saving model to: %s' % (save_dir + '_%d' % itr))
             with graph.as_default():
                 saver.save(sess, save_dir + '_%d' % itr)
 
@@ -194,7 +196,7 @@ def generate_test_demos(data_generator):
         selected_demoO.append(np.array(Os))
         selected_demoX.append(np.array(Xs))
         selected_demoU.append(np.array(Us))
-    print "Finished collecting demos for testing"
+    print("Finished collecting demos for testing")
     selected_demo = dict(selected_demoX=selected_demoX, selected_demoU=selected_demoU, selected_demoO=selected_demoO)
     data_generator.selected_demo = selected_demo
 
@@ -205,6 +207,7 @@ def main():
     # Build up environment to prevent segfault
     if not FLAGS.train:
         if 'reach' in FLAGS.experiment:
+            print('making ReacherMILTest-v1')
             env = gym.make('ReacherMILTest-v1')
             ob = env.reset()
             # import pdb; pdb.set_trace()
@@ -259,12 +262,11 @@ def main():
     if FLAGS.training_set_size != -1:
         exp_string += '.' + str(FLAGS.training_set_size) + '_trials'
 
-    log_dir = FLAGS.log_dir + '/' + exp_string
+    log_dirs = FLAGS.log_dirs + '/' + exp_string
 
     # put here for now
     if FLAGS.train:
         data_generator.generate_batches(noisy=FLAGS.use_noisy_demos)
-        #data_generator.generate_batches()
         with graph.as_default():
             train_image_tensors = data_generator.make_batch_tensor(network_config, restore_iter=FLAGS.restore_iter)
             inputa = train_image_tensors[:, :FLAGS.update_batch_size*FLAGS.T, :]
@@ -287,25 +289,28 @@ def main():
         # Start queue runners (used for loading videos on the fly)
         tf.train.start_queue_runners(sess=sess)
     if FLAGS.resume:
-        model_file = tf.train.latest_checkpoint(log_dir)
+        model_file = tf.train.latest_checkpoint(log_dirs)
         if FLAGS.restore_iter > 0:
             model_file = model_file[:model_file.index('model')] + 'model_' + str(FLAGS.restore_iter)
         if model_file:
+            ind1 = model_file.index('model')
             ind1 = model_file.index('model')
             resume_itr = int(model_file[ind1+6:])
             print("Restoring model weights from " + model_file)
             with graph.as_default():
                 saver.restore(sess, model_file)
     if FLAGS.train:
-        train(graph, model, saver, sess, data_generator, log_dir, restore_itr=FLAGS.restore_iter)
+        train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=FLAGS.restore_iter)
     else:
         if 'reach' in FLAGS.experiment:
             generate_test_demos(data_generator)
-            evaluate_vision_reach(env, graph, model, data_generator, sess, exp_string, FLAGS.record_gifs, log_dir)
+            evaluate_vision_reach(env, graph, model, data_generator, sess, exp_string, FLAGS.record_gifs, log_dirs)
         elif 'push' in FLAGS.experiment:
-            evaluate_push(sess, graph, model, data_generator, exp_string, log_dir, FLAGS.demo_file + '/', save_video=FLAGS.record_gifs)
+            evaluate_push(sess, graph, model, data_generator, exp_string, log_dirs, FLAGS.demo_file + '/', save_video=FLAGS.record_gifs)
         else:
             raise NotImplementedError
 
 if __name__ == "__main__":
+
+    # print('FLAGS.demo_file',FLAGS.demo_file)
     main()

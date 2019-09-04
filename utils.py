@@ -1,4 +1,4 @@
-""" General utiliy functions """
+# coding: utf-8
 import logging
 try:
    import cPickle as pickle
@@ -49,6 +49,7 @@ class DataLogger(object):
         """ Unpickle data from file specified by filename. """
         try:
             with open_zip(filename, 'rb') as f:
+                # result = pickle.load(f,encoding='iso-8859-1')
                 result = pickle.load(f)
             return result
         except IOError:
@@ -69,7 +70,7 @@ def extract_demo_dict(demo_file):
         demos = DataLogger().unpickle(demo_file)
     else:
         demos = {}
-        for i in xrange(0, len(demo_file)):
+        for i in range(0, len(demo_file)):
             with Timer('Extracting demo file %d' % i):
                 demos[i] = DataLogger().unpickle(demo_file[i])
     return demos
@@ -86,7 +87,7 @@ class Timer(object):
         fname, lineno, method, _ = tb.extract_stack()[-2]  # Get caller
         _, fname = os.path.split(fname)
         id_str = '%s:%s' % (fname, method)
-        print 'TIMER:'+color_string('%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time), color='gray')
+        print('TIMER:'+color_string('%s: %s (Elapsed: %fs)' % (id_str, self.message, new_time), color='gray'))
 
 def load_scale_and_bias(data_path):
     with open(data_path, 'rb') as f:

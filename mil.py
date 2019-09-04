@@ -60,16 +60,16 @@ class MIL(object):
                 self.train_op = tf.train.AdamOptimizer(self.meta_lr).minimize(self.total_losses2[self.num_updates - 1])
                 # Add summaries
                 summ = [tf.summary.scalar(prefix + 'Pre-update_loss', self.total_loss1)]
-                for j in xrange(self.num_updates):
+                for j in range(self.num_updates):
                     summ.append(tf.summary.scalar(prefix + 'Post-update_loss_step_%d' % j, self.total_losses2[j]))
                     summ.append(tf.summary.scalar(prefix + 'Post-update_final_eept_loss_step_%d' % j, self.total_final_eept_losses2[j]))
-                    for k in xrange(len(self.sorted_weight_keys)):
+                    for k in range(len(self.sorted_weight_keys)):
                         summ.append(tf.summary.histogram('Gradient_of_%s_step_%d' % (self.sorted_weight_keys[k], j), gradients[j][k]))
                 self.train_summ_op = tf.summary.merge(summ)
             elif 'Validation' in prefix:
                 # Add summaries
                 summ = [tf.summary.scalar(prefix + 'Pre-update_loss', self.val_total_loss1)]
-                for j in xrange(self.num_updates):
+                for j in range(self.num_updates):
                     summ.append(tf.summary.scalar(prefix + 'Post-update_loss_step_%d' % j, self.val_total_losses2[j]))
                     summ.append(tf.summary.scalar(prefix + 'Post-update_final_eept_loss_step_%d' % j, self.val_total_final_eept_losses2[j]))
                 self.val_summ_op = tf.summary.merge(summ)
@@ -128,7 +128,7 @@ class MIL(object):
         if FLAGS.conv_bt:
             weights['img_context'] = safe_get('img_context', initializer=tf.zeros([im_height, im_width, num_channels], dtype=tf.float32))
             weights['img_context'] = tf.clip_by_value(weights['img_context'], 0., 1.)
-        for i in xrange(n_conv_layers):
+        for i in range(n_conv_layers):
             if not pretrain or i != 0:
                 if self.norm_type == 'selu':
                     weights['wc%d' % (i+1)] = init_conv_weights_snn([filter_sizes[i], filter_sizes[i], fan_in, num_filters[i]], name='wc%d' % (i+1)) # 5x5 conv, 1 input, 32 outputs
@@ -172,7 +172,7 @@ class MIL(object):
                     temporal_kernel_size = FLAGS.temporal_filter_size
                     temporal_num_filters = [FLAGS.temporal_num_filters_ee] * FLAGS.temporal_num_layers_ee
                     temporal_num_filters[-1] = len(final_eept_range)
-                    for j in xrange(len(temporal_num_filters)):
+                    for j in range(len(temporal_num_filters)):
                         if j != len(temporal_num_filters) - 1:
                             weights['w_1d_conv_2_head_ee_%d' % j] = init_weights([temporal_kernel_size, two_head_in_shape, temporal_num_filters[j]], name='w_1d_conv_2_head_ee_%d' % j)
                             weights['b_1d_conv_2_head_ee_%d' % j] = init_bias([temporal_num_filters[j]], name='b_1d_conv_2_head_ee_%d' % j)
@@ -201,7 +201,7 @@ class MIL(object):
         dim_hidden.append(dim_output)
         weights = {}
         in_shape = dim_input
-        for i in xrange(n_layers):
+        for i in range(n_layers):
             if FLAGS.two_arms and i == 0:
                 if self.norm_type == 'selu':
                     weights['w_%d_img' % i] = init_fc_weights_snn([in_shape-len(self.state_idx), dim_hidden[i]], name='w_%d_img' % i)
@@ -227,7 +227,7 @@ class MIL(object):
                     temporal_kernel_size = FLAGS.temporal_filter_size
                     temporal_num_filters = [FLAGS.temporal_num_filters] * FLAGS.temporal_num_layers
                     temporal_num_filters[-1] = dim_output
-                    for j in xrange(len(temporal_num_filters)):
+                    for j in range(len(temporal_num_filters)):
                         if j != len(temporal_num_filters) - 1:
                             weights['w_1d_conv_2_head_%d' % j] = init_weights([temporal_kernel_size, in_shape, temporal_num_filters[j]],
                                                                                 name='w_1d_conv_2_head_%d' % j)
@@ -250,10 +250,14 @@ class MIL(object):
             im_width = network_config['image_width']
             num_channels = network_config['image_channels']
             flatten_image = tf.reshape(image_input, [-1, im_height*im_width*num_channels])
-            context = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), range(FLAGS.bt_dim)))
+            print('flatten_image.shape',flatten_image.shape)
+            print('range(FLAGS.bt_dim)',range(FLAGS.bt_dim),FLAGS.bt_dim)
+
+            context = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), list(range(FLAGS.bt_dim))))
+            print('context.shape',context.shape)
             context += weights['context']
             if FLAGS.learn_final_eept:
-                context_final_eept = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), range(FLAGS.bt_dim)))
+                context_final_eept = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(flatten_image)), list(range(FLAGS.bt_dim))))
                 context_final_eept += weights['context_final_eept']
         norm_type = self.norm_type
         decay = network_config.get('decay', 0.9)
@@ -272,7 +276,7 @@ class MIL(object):
             img_context = tf.zeros_like(conv_layer)
             img_context += weights['img_context']
             conv_layer = tf.concat(axis=3, values=[conv_layer, img_context])
-        for i in xrange(n_conv_layers):
+        for i in range(n_conv_layers):
             if not use_dropout:
                 conv_layer = norm(conv2d(img=conv_layer, w=weights['wc%d' % (i+1)], b=weights['bc%d' % (i+1)], strides=strides[i], is_dilated=is_dilated), \
                                 norm_type=norm_type, decay=decay, id=i, is_training=is_training, activation_fn=self.activation_fn)
@@ -334,7 +338,7 @@ class MIL(object):
                     final_eept_pred = tf.reshape(final_eept_pred, [-1, self.T, final_eept_pred.get_shape().dims[-1].value])
                     task_label_pred = None
                     temporal_num_layers = FLAGS.temporal_num_layers_ee
-                    for j in xrange(temporal_num_layers):
+                    for j in range(temporal_num_layers):
                         if j != temporal_num_layers - 1:
                             final_eept_pred = norm(conv1d(img=final_eept_pred, w=weights['w_1d_conv_2_head_ee_%d' % j], b=weights['b_1d_conv_2_head_ee_%d' % j]), \
                                             norm_type=self.norm_type, id=n_conv_layers+j, is_training=is_training, activation_fn=self.activation_fn)
@@ -371,7 +375,7 @@ class MIL(object):
         norm_type = self.norm_type
         if state_input is not None and not FLAGS.two_arms:
             fc_output = tf.concat(axis=1, values=[fc_output, state_input])
-        for i in xrange(n_layers):
+        for i in range(n_layers):
             if i > 0 and FLAGS.all_fc_bt:
                 context = tf.transpose(tf.gather(tf.transpose(tf.zeros_like(fc_output)), range(FLAGS.bt_dim)))
                 context += weights['context_%d' % i]
@@ -384,7 +388,7 @@ class MIL(object):
                     n_conv_layers = len(strides)
                     if FLAGS.temporal_conv_2_head_ee:
                         n_conv_layers += FLAGS.temporal_num_layers_ee
-                    for j in xrange(temporal_num_layers):
+                    for j in range(temporal_num_layers):
                         if j != temporal_num_layers - 1:
                             fc_output = norm(conv1d(img=fc_output, w=weights['w_1d_conv_2_head_%d' % j], b=weights['b_1d_conv_2_head_%d' % j]), \
                                             norm_type=self.norm_type, id=n_conv_layers+j, is_training=is_training, activation_fn=self.activation_fn)
@@ -469,8 +473,8 @@ class MIL(object):
 
             num_updates = self.num_updates
             lossesa, outputsa = [], []
-            lossesb = [[] for _ in xrange(num_updates)]
-            outputsb = [[] for _ in xrange(num_updates)]
+            lossesb = [[] for _ in range(num_updates)]
+            outputsb = [[] for _ in range(num_updates)]
 
             def batch_metalearn(inp):
                 inputa, inputb, actiona, actionb = inp
@@ -526,7 +530,9 @@ class MIL(object):
                     local_lossa += final_eept_loss_eps * final_eept_lossa
 
                 # Compute fast gradients
-                grads = tf.gradients(local_lossa, weights.values())
+                print('local_lossa',local_lossa,'weights.values()',list(weights.values()))
+                print('weights',weights)
+                grads = tf.gradients(local_lossa, list(weights.values()))
                 gradients = dict(zip(weights.keys(), grads))
                 # make fast gradient zero for weights with gradient None
                 for key in gradients.keys():
@@ -632,5 +638,5 @@ class MIL(object):
 
         out_dtype = [tf.float32, [tf.float32]*num_updates, tf.float32, tf.float32, [tf.float32]*num_updates, [tf.float32]*num_updates, tf.float32, [[tf.float32]*len(self.weights.keys())]*num_updates]
         result = tf.map_fn(batch_metalearn, elems=(inputa, inputb, actiona, actionb), dtype=out_dtype)
-        print 'Done with map.'
+        print ('Done with map.')
         return result

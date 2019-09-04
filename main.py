@@ -17,8 +17,8 @@ LOGGER = logging.getLogger(__name__)
 
 ## Dataset/method options
 flags.DEFINE_string('experiment', 'sim__vision_reach', 'sim_vision_reach or sim_push')
-flags.DEFINE_string('demo_file', 'mil_data/data/sim_vision_reach_test', 'path to the directory where demo files that containing robot states and actions are stored')
-flags.DEFINE_string('demo_gif_dir',  'mil_data/data/sim_vision_reach_test/', 'path to the videos of demonstrations')
+flags.DEFINE_string('demo_file', 'mil_data/data/sim_vision_reach', 'path to the directory where demo files that containing robot states and actions are stored')
+flags.DEFINE_string('demo_gif_dir',  'mil_data/data/sim_vision_reach/', 'path to the videos of demonstrations')
 flags.DEFINE_string('gif_prefix', 'color', 'prefix of the video directory for each task, e.g. object_0 for task 0')
 flags.DEFINE_integer('im_width', 80, 'width of the images in the demo videos,  125 for sim_push, and 80 for sim_vision_reach')
 flags.DEFINE_integer('im_height', 64, 'height of the images in the demo videos, 125 for sim_push, and 64 for sim_vision_reach')
@@ -33,20 +33,20 @@ flags.DEFINE_bool('no_state', False, 'do not include states in the demonstration
 flags.DEFINE_bool('no_final_eept', False, 'do not include final ee pos in the demonstrations for inner update')
 flags.DEFINE_bool('zero_state', False, 'zero-out states (meta-learn state) in the demonstrations for inner update (used in the paper with video-only demos)')
 flags.DEFINE_bool('two_arms', False, 'use two-arm structure when state is zeroed-out')
-flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
+flags.DEFINE_integer('training_set_size', 750, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
                                                 -1 for all data except those in validation set')
-flags.DEFINE_integer('val_set_size',20 , 'size of the training set, 150 for sim_reach and 76 for sim push')
+flags.DEFINE_integer('val_set_size',150 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 2, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
-flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
+flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('meta_batch_size', 25, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
 flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
-flags.DEFINE_integer('update_batch_size', 2, 'number of examples used for inner gradient update (K for K-shot learning).')
+flags.DEFINE_integer('update_batch_size', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_float('train_update_lr', 1e-3, 'step size alpha for inner gradient update.') # 0.001 for reaching, 0.01 for pushing and placing
 flags.DEFINE_integer('num_updates', 1, 'number of inner gradient updates during training.') # 5 for placing
 flags.DEFINE_bool('clip', True, 'use gradient clipping for fast gradient')
-flags.DEFINE_float('clip_max', 10.0, 'maximum clipping value for fast gradient')
-flags.DEFINE_float('clip_min', -10.0, 'minimum clipping value for fast gradient')
+flags.DEFINE_float('clip_max', 20.0, 'maximum clipping value for fast gradient')
+flags.DEFINE_float('clip_min', -20.0, 'minimum clipping value for fast gradient')
 flags.DEFINE_bool('fc_bt', True, 'use bias transformation for the first fc layer')
 flags.DEFINE_bool('all_fc_bt', False, 'use bias transformation for all fc layers')
 flags.DEFINE_bool('conv_bt', True, 'use bias transformation for the first conv layer, N/A for using pretraining')
@@ -74,21 +74,21 @@ flags.DEFINE_bool('fp', True, 'use spatial soft-argmax or not')
 flags.DEFINE_string('norm', 'layer_norm', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('dropout', False, 'use dropout for fc layers or not')
 flags.DEFINE_float('keep_prob', 0.5, 'keep probability for dropout')
-flags.DEFINE_integer('num_filters', 2, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
-flags.DEFINE_integer('filter_size', 5, 'filter size for conv nets -- 3 for placing, 5 for pushing, 3 for reaching.')
-flags.DEFINE_integer('num_conv_layers', 4, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
-flags.DEFINE_integer('num_strides', 4, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_filters', 30, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
+flags.DEFINE_integer('filter_size', 3, 'filter size for conv nets -- 3 for placing, 5 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_conv_layers', 3, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
+flags.DEFINE_integer('num_strides', 3, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_bool('conv', True, 'whether or not to use a convolutional network, only applicable in some cases')
 flags.DEFINE_integer('num_fc_layers', 3, 'number of fully-connected layers')
-flags.DEFINE_integer('layer_size', 100, 'hidden dimension of fully-connected layers')
+flags.DEFINE_integer('layer_size', 200, 'hidden dimension of fully-connected layers')
 flags.DEFINE_bool('temporal_conv_2_head', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting.')
 flags.DEFINE_bool('temporal_conv_2_head_ee', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting \
                 for predicting the ee pose.')
 flags.DEFINE_integer('temporal_filter_size', 5, 'filter size for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters', 2, 'number of filters for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters_ee', 2, 'number of filters for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers', 2, 'number of layers for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers_ee', 2, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_filters', 10, 'number of filters for temporal convolution')
+flags.DEFINE_integer('temporal_num_filters_ee', 10, 'number of filters for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers', 3, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers_ee', 3, 'number of layers for temporal convolution for ee pose prediction')
 flags.DEFINE_string('init', 'xavier', 'initializer for conv weights. Choose among random, xavier, and he')
 flags.DEFINE_bool('max_pool', False, 'Whether or not to use max pooling rather than strided convolutions')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
@@ -97,7 +97,7 @@ flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in
 flags.DEFINE_bool('log', True, 'if false, do not log summaries, for debugging code.')
 flags.DEFINE_string('log_dirs', 'logs/sim_reach', 'directory for summaries and checkpoints.')
 flags.DEFINE_bool('resume', False, 'resume training if there is a model available')
-flags.DEFINE_bool('train', False, 'True to train, False to test.')
+flags.DEFINE_bool('train', True, 'True to train, False to test.')
 flags.DEFINE_integer('restore_iter', 0, 'iteration to load model (-1 for latest model)')
 flags.DEFINE_integer('train_update_batch_size', -1, 'number of examples used for gradient update during training \
                     (use if you want to test with a different number).')

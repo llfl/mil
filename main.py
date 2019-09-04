@@ -38,7 +38,7 @@ flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 fo
 flags.DEFINE_integer('val_set_size',20 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 4, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('metatrain_iterations', 2, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
 flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
 flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
 flags.DEFINE_integer('update_batch_size', 2, 'number of examples used for inner gradient update (K for K-shot learning).')

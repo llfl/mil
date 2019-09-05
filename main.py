@@ -277,7 +277,7 @@ def main():
             inputb = val_image_tensors[:, FLAGS.update_batch_size*FLAGS.T:, :]
             val_input_tensors = {'inputa': inputa, 'inputb': inputb}
         model.init_network(graph, input_tensors=train_input_tensors, restore_iter=FLAGS.restore_iter)
-        #model.init_network(graph, input_tensors=val_input_tensors, restore_iter=FLAGS.restore_iter, prefix='Validation_')
+        model.init_network(graph, input_tensors=val_input_tensors, restore_iter=FLAGS.restore_iter, prefix='Validation')
     else:
         model.init_network(graph, prefix='Testing')
     with graph.as_default():

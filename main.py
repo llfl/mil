@@ -38,7 +38,7 @@ flags.DEFINE_integer('training_set_size', 150, 'size of the training set, 1500 f
 flags.DEFINE_integer('val_set_size',30 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 1000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
 flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
 flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
 flags.DEFINE_integer('update_batch_size', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
@@ -74,19 +74,19 @@ flags.DEFINE_bool('fp', True, 'use spatial soft-argmax or not')
 flags.DEFINE_string('norm', 'layer_norm', 'batch_norm, layer_norm, or None')
 flags.DEFINE_bool('dropout', False, 'use dropout for fc layers or not')
 flags.DEFINE_float('keep_prob', 0.5, 'keep probability for dropout')
-flags.DEFINE_integer('num_filters', 10, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
+flags.DEFINE_integer('num_filters', 3, 'number of filters for conv nets -- 64 for placing, 16 for pushing, 40 for reaching.')
 flags.DEFINE_integer('filter_size', 3, 'filter size for conv nets -- 3 for placing, 5 for pushing, 3 for reaching.')
 flags.DEFINE_integer('num_conv_layers', 3, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_integer('num_strides', 3, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_bool('conv', True, 'whether or not to use a convolutional network, only applicable in some cases')
 flags.DEFINE_integer('num_fc_layers', 3, 'number of fully-connected layers')
-flags.DEFINE_integer('layer_size', 200, 'hidden dimension of fully-connected layers')
+flags.DEFINE_integer('layer_size', 2, 'hidden dimension of fully-connected layers')
 flags.DEFINE_bool('temporal_conv_2_head', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting.')
 flags.DEFINE_bool('temporal_conv_2_head_ee', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting \
                 for predicting the ee pose.')
 flags.DEFINE_integer('temporal_filter_size', 5, 'filter size for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters', 10, 'number of filters for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters_ee', 10, 'number of filters for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_filters', 3, 'number of filters for temporal convolution')
+flags.DEFINE_integer('temporal_num_filters_ee', 3, 'number of filters for temporal convolution for ee pose prediction')
 flags.DEFINE_integer('temporal_num_layers', 3, 'number of layers for temporal convolution for ee pose prediction')
 flags.DEFINE_integer('temporal_num_layers_ee', 3, 'number of layers for temporal convolution for ee pose prediction')
 flags.DEFINE_string('init', 'xavier', 'initializer for conv weights. Choose among random, xavier, and he')
@@ -207,7 +207,7 @@ def main():
     # Build up environment to prevent segfault
     if not FLAGS.train:
         if 'reach' in FLAGS.experiment:
-            #print('making ReacherMILTest-v1')
+            print('making ReacherMILTest-v1')
             env = gym.make('ReacherMILTest-v1')
             ob = env.reset()
             # import pdb; pdb.set_trace()
@@ -312,5 +312,5 @@ def main():
 
 if __name__ == "__main__":
 
-    # #print('FLAGS.demo_file',FLAGS.demo_file)
+    # print('FLAGS.demo_file',FLAGS.demo_file)
     main()

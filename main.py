@@ -33,13 +33,13 @@ flags.DEFINE_bool('no_state', False, 'do not include states in the demonstration
 flags.DEFINE_bool('no_final_eept', False, 'do not include final ee pos in the demonstrations for inner update')
 flags.DEFINE_bool('zero_state', False, 'zero-out states (meta-learn state) in the demonstrations for inner update (used in the paper with video-only demos)')
 flags.DEFINE_bool('two_arms', False, 'use two-arm structure when state is zeroed-out')
-flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
+flags.DEFINE_integer('training_set_size', 750, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
                                                 -1 for all data except those in validation set')
-flags.DEFINE_integer('val_set_size',10 , 'size of the training set, 150 for sim_reach and 76 for sim push')
+flags.DEFINE_integer('val_set_size',150 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 1000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
-flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
+flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('meta_batch_size', 25, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
 flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
 flags.DEFINE_integer('update_batch_size', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
 flags.DEFINE_float('train_update_lr', 1e-3, 'step size alpha for inner gradient update.') # 0.001 for reaching, 0.01 for pushing and placing
@@ -79,8 +79,8 @@ flags.DEFINE_integer('filter_size', 3, 'filter size for conv nets -- 3 for placi
 flags.DEFINE_integer('num_conv_layers', 3, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_integer('num_strides', 3, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_bool('conv', True, 'whether or not to use a convolutional network, only applicable in some cases')
-flags.DEFINE_integer('num_fc_layers', 2, 'number of fully-connected layers')
-flags.DEFINE_integer('layer_size', 2, 'hidden dimension of fully-connected layers')
+flags.DEFINE_integer('num_fc_layers', 3, 'number of fully-connected layers')
+flags.DEFINE_integer('layer_size', 100, 'hidden dimension of fully-connected layers')
 flags.DEFINE_bool('temporal_conv_2_head', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting.')
 flags.DEFINE_bool('temporal_conv_2_head_ee', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting \
                 for predicting the ee pose.')
@@ -291,6 +291,7 @@ def main():
         # Start queue runners (used for loading videos on the fly)
         tf.train.start_queue_runners(sess=sess)
     if FLAGS.resume:
+        print('log_dirs',log_dirs)
         model_file = tf.train.latest_checkpoint(log_dirs)
         if FLAGS.restore_iter > 0:
             model_file = model_file[:model_file.index('model')] + 'model_' + str(FLAGS.restore_iter)

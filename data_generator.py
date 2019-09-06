@@ -34,7 +34,7 @@ class DataGenerator(object):
         self.scale, self.bias = None, None
         demo_file = FLAGS.demo_file
 
-        ##print('self.update_batch_size',self.update_batch_size)
+        #print('self.update_batch_size',self.update_batch_size)
         #print('self.test_batch_size',self.test_batch_size)
         #print('self.meta_batch_size',self.meta_batch_size)
         #print('self.T',self.T )
@@ -121,7 +121,7 @@ class DataGenerator(object):
             else:
                 offset = 0
             img_folders = natsorted(glob.glob(self.demo_gif_dir + self.gif_prefix + '_*'))
-            # #print('img_folders ',img_folders,'self.train_idx',self.train_idx,'self.val_idx',self.val_idx)
+            # print('img_folders ',img_folders,'self.train_idx',self.train_idx,'self.val_idx',self.val_idx)
             train_img_folders = {i: img_folders[i] for i in self.train_idx}
             val_img_folders = {i: img_folders[i+offset] for i in self.val_idx}
             if noisy:
@@ -141,7 +141,7 @@ class DataGenerator(object):
                 self.noisy_training_batch_idx = {i: OrderedDict() for i in range(TOTAL_ITERS)}
                 self.noisy_val_batch_idx = {i: OrderedDict() for i in TEST_PRINT_INTERVAL*np.arange(1, TOTAL_ITERS/TEST_PRINT_INTERVAL)}
             for itr in range(TOTAL_ITERS):
-                # #print('self.train_idx',self.train_idx,'self.meta_batch_size',self.meta_batch_size)
+                # print('self.train_idx',self.train_idx,'self.meta_batch_size',self.meta_batch_size)
                 sampled_train_idx = random.sample(list(self.train_idx), self.meta_batch_size)
                 for idx in sampled_train_idx:
                     sampled_folder = train_img_folders[idx]
@@ -180,8 +180,8 @@ class DataGenerator(object):
                         self.noisy_training_batch_idx[itr][idx] = noisy_sampled_image_idx
 
 
-                # if itr != 0 and itr % TEST_PRINT_INTERVAL == 0:
-                #     #print('self.val_idx',self.val_idx)
+                if itr != 0 and itr % TEST_PRINT_INTERVAL == 0:
+                #     print('self.val_idx',self.val_idx)generate_data_batch
                     sampled_val_idx = random.sample(list(self.val_idx), self.meta_batch_size)
                     for idx in sampled_val_idx:
                         sampled_folder = val_img_folders[idx]
@@ -216,9 +216,10 @@ class DataGenerator(object):
                 all_filenames = all_filenames[batch_image_size*(restore_iter+1):]
         else:
             all_filenames = self.all_val_filenames
+            print('self.all_val_filenames',self.all_val_filenames)
             if restore_iter > 0:
                 all_filenames = all_filenames[batch_image_size*(int(restore_iter/TEST_INTERVAL)+1):]
-        
+
         im_height = network_config['image_height']
         im_width = network_config['image_width']
         num_channels = network_config['image_channels']

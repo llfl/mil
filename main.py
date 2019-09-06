@@ -33,12 +33,12 @@ flags.DEFINE_bool('no_state', False, 'do not include states in the demonstration
 flags.DEFINE_bool('no_final_eept', False, 'do not include final ee pos in the demonstrations for inner update')
 flags.DEFINE_bool('zero_state', False, 'zero-out states (meta-learn state) in the demonstrations for inner update (used in the paper with video-only demos)')
 flags.DEFINE_bool('two_arms', False, 'use two-arm structure when state is zeroed-out')
-flags.DEFINE_integer('training_set_size', 150, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
+flags.DEFINE_integer('training_set_size', 50, 'size of the training set, 1500 for sim_reach, 693 for sim push, and \
                                                 -1 for all data except those in validation set')
-flags.DEFINE_integer('val_set_size',30 , 'size of the training set, 150 for sim_reach and 76 for sim push')
+flags.DEFINE_integer('val_set_size',10 , 'size of the training set, 150 for sim_reach and 76 for sim push')
 
 ## Training options
-flags.DEFINE_integer('metatrain_iterations', 30000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
+flags.DEFINE_integer('metatrain_iterations', 1000, 'number of metatraining iterations.') # 30k for pushing, 50k for reaching and placing
 flags.DEFINE_integer('meta_batch_size', 5, 'number of tasks sampled per meta-update') # 5 for reaching, 15 for pushing, 12 for placing
 flags.DEFINE_float('meta_lr', 0.01, 'the base learning rate of the generator')
 flags.DEFINE_integer('update_batch_size', 1, 'number of examples used for inner gradient update (K for K-shot learning).')
@@ -79,16 +79,16 @@ flags.DEFINE_integer('filter_size', 3, 'filter size for conv nets -- 3 for placi
 flags.DEFINE_integer('num_conv_layers', 3, 'number of conv layers -- 5 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_integer('num_strides', 3, 'number of conv layers with strided filters -- 3 for placing, 4 for pushing, 3 for reaching.')
 flags.DEFINE_bool('conv', True, 'whether or not to use a convolutional network, only applicable in some cases')
-flags.DEFINE_integer('num_fc_layers', 3, 'number of fully-connected layers')
+flags.DEFINE_integer('num_fc_layers', 2, 'number of fully-connected layers')
 flags.DEFINE_integer('layer_size', 2, 'hidden dimension of fully-connected layers')
 flags.DEFINE_bool('temporal_conv_2_head', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting.')
 flags.DEFINE_bool('temporal_conv_2_head_ee', False, 'whether or not to use temporal convolutions for the two-head architecture in video-only setting \
                 for predicting the ee pose.')
 flags.DEFINE_integer('temporal_filter_size', 5, 'filter size for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters', 3, 'number of filters for temporal convolution')
-flags.DEFINE_integer('temporal_num_filters_ee', 3, 'number of filters for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers', 3, 'number of layers for temporal convolution for ee pose prediction')
-flags.DEFINE_integer('temporal_num_layers_ee', 3, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_filters', 2, 'number of filters for temporal convolution')
+flags.DEFINE_integer('temporal_num_filters_ee', 2, 'number of filters for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers', 2, 'number of layers for temporal convolution for ee pose prediction')
+flags.DEFINE_integer('temporal_num_layers_ee', 2, 'number of layers for temporal convolution for ee pose prediction')
 flags.DEFINE_string('init', 'xavier', 'initializer for conv weights. Choose among random, xavier, and he')
 flags.DEFINE_bool('max_pool', False, 'Whether or not to use max pooling rather than strided convolutions')
 flags.DEFINE_bool('stop_grad', False, 'if True, do not use second derivatives in meta-optimization (for speed)')
@@ -111,8 +111,8 @@ def train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=0):
     """
     PRINT_INTERVAL = 100
     TEST_PRINT_INTERVAL = PRINT_INTERVAL*5
-    SUMMARY_INTERVAL = 100
-    SAVE_INTERVAL = 1000
+    SUMMARY_INTERVAL = 10
+    SAVE_INTERVAL = 100
     TOTAL_ITERS = FLAGS.metatrain_iterations
     prelosses, postlosses = [], []
     save_dir = log_dirs + '/model'
@@ -160,6 +160,8 @@ def train(graph, model, saver, sess, data_generator, log_dirs, restore_itr=0):
                             model.actiona: actiona,
                             model.actionb: actionb}
                 with graph.as_default():
+                    # print('input_tensors',input_tensors)
+                    # print('feed_dict',feed_dict)
                     results = sess.run(input_tensors, feed_dict=feed_dict)
                 train_writer.add_summary(results[0], itr)
                 #print('Test results: average preloss is %.2f, average postloss is %.2f' % (np.mean(results[1]), np.mean(results[2])))
@@ -277,7 +279,7 @@ def main():
             inputb = val_image_tensors[:, FLAGS.update_batch_size*FLAGS.T:, :]
             val_input_tensors = {'inputa': inputa, 'inputb': inputb}
         model.init_network(graph, input_tensors=train_input_tensors, restore_iter=FLAGS.restore_iter)
-        model.init_network(graph, input_tensors=val_input_tensors, restore_iter=FLAGS.restore_iter, prefix='Validation_')
+        model.init_network(graph, input_tensors=val_input_tensors, restore_iter=FLAGS.restore_iter, prefix='Validation')
     else:
         model.init_network(graph, prefix='Testing')
     with graph.as_default():
@@ -293,7 +295,6 @@ def main():
         if FLAGS.restore_iter > 0:
             model_file = model_file[:model_file.index('model')] + 'model_' + str(FLAGS.restore_iter)
         if model_file:
-            ind1 = model_file.index('model')
             ind1 = model_file.index('model')
             resume_itr = int(model_file[ind1+6:])
             #print("Restoring model weights from " + model_file)
